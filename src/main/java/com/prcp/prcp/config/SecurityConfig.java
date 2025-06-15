@@ -26,10 +26,14 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**","/api/v1/quiz/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/v1/product/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/product/**").permitAll()
+
+                        .requestMatchers("/api/v1/prcp/**")
+                        .hasAnyRole("INITIATOR", "INTERNAL_CONTROL", "HEAD", "COO")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/prcp/**/reinitiate").hasRole("INITIATOR")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/prcp/**/push").hasRole("COO")
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -38,4 +42,5 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 }

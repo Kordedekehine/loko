@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/prcp")
-@PreAuthorize("hasAnyRole('INITIATOR', 'INTERNAL_CONTROL', 'HEAD', 'COO')")
 @Slf4j
 public class FileController {
 
@@ -112,13 +111,11 @@ public class FileController {
     }
 
     @PostMapping("/{id}/reinitiate")
-    @PreAuthorize("hasRole('INITIATOR')")
     public ResponseEntity<?> reinitiate(@PathVariable Long id) {
         return ResponseEntity.ok(fileUploadService.reinitiate(id));
     }
 
     @PostMapping("/{id}/push")
-    @PreAuthorize("hasRole('COO')")
     public ResponseEntity<?> push(@PathVariable Long id) {
         return ResponseEntity.ok(fileUploadService.pushToCore(id));
     }
