@@ -101,6 +101,8 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
     }
 
+
+
     public FileSummaryResponse approve(Long fileId, String comment) {
 
         UserResponseDto userDetails = userService.getCurrentUser();
@@ -192,24 +194,6 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
 
-
-
-//    public Page<FileRecord> getSummary(
-//            String country,
-//            String accountType,
-//            LocalDate startDate,
-//            LocalDate endDate,
-//            int page,
-//            int size
-//    ) {
-//        return fileUploadRepository.findByCountryCodeAndAccountTypeAndDateOfUploadBetween(
-//                country,
-//                accountType,
-//                startDate.atStartOfDay(),
-//                endDate.atTime(23, 59),
-//                PageRequest.of(page, size)
-//        );
-//    }
 
     public FileSummaryResponse getById(Long id) {
         FileRecord fileRecord = fileUploadRepository.findById(id)

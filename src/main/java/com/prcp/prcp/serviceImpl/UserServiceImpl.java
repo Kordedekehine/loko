@@ -98,8 +98,8 @@ public class UserServiceImpl implements UserService {
 
         if (authentication.isAuthenticated()) {
 
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-           // CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+         //   UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+           CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
             String accessToken = jwtService.generateToken(userDetails);
 
@@ -141,20 +141,45 @@ public class UserServiceImpl implements UserService {
     }
 
 
+//    @Override
+//    public UserResponseDto getCurrentUser() {
+//
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+//
+//        User user = userRepository.findByUsername(userDetails.getUsername())
+//                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+//
+//        UserResponseDto responseDto = new UserResponseDto();
+//        user.setRoles(user.getRoles());
+//        BeanUtils.copyProperties(user, responseDto);
+//
+//        return responseDto;
+//    }
+
     @Override
     public UserResponseDto getCurrentUser() {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("No authenticated user");
+        }
+
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        User user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
         UserResponseDto responseDto = new UserResponseDto();
-        user.setRoles(user.getRoles());
-        BeanUtils.copyProperties(user, responseDto);
+        responseDto.setId(userDetails.getId());
+        responseDto.setUsername(userDetails.getUsername());
+        responseDto.setCountryCode(userDetails.getCountryCode());
+        responseDto.setState(userDetails.getState());
+        responseDto.setEmail(userDetails.getEmail());
+        responseDto.setFirstName(userDetails.getFirstName());
+        responseDto.setLastName(userDetails.getLastName());
+        responseDto.setPassword(userDetails.getPassword());
+        responseDto.setRole(userDetails.getAuthorities().stream().findFirst().get().getAuthority());
 
         return responseDto;
     }
+
 
 }

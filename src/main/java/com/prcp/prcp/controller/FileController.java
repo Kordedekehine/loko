@@ -5,15 +5,24 @@ import com.prcp.prcp.dto.FileSummaryRequest;
 import com.prcp.prcp.dto.FileSummaryResponse;
 import com.prcp.prcp.dto.PagedFileResponseDto;
 import com.prcp.prcp.entity.FileRecord;
+import com.prcp.prcp.repository.FileUploadRepository;
 import com.prcp.prcp.service.FileUploadService;
-import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -22,22 +31,20 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/prcp")
-@PreAuthorize("hasAnyRole('STATE_REP', 'INTERNAL_CONTROL', 'HEAD', 'COO')")
+@PreAuthorize("hasAnyRole('INITIATOR', 'INTERNAL_CONTROL', 'HEAD', 'COO')")
+@Slf4j
 public class FileController {
 
     private final FileUploadService fileUploadService;
 
+    private final FileUploadRepository fileUploadRepository;
 
-    public FileController(FileUploadService fileUploadService) {
+
+    public FileController(FileUploadService fileUploadService, FileUploadRepository fileUploadRepository) {
         this.fileUploadService = fileUploadService;
+        this.fileUploadRepository = fileUploadRepository;
     }
 
-//    @PostMapping("/upload")
-//    public ResponseEntity<FileSummaryResponse> uploadFile(@ModelAttribute FileRecordRequestDto fileRecordRequestDto) {
-//        FileSummaryResponse fileRecord = fileUploadService.uploadFile(fileRecordRequestDto);
-//        return ResponseEntity.ok(fileRecord);
-//
-//    }
 
     @PostMapping("/upload")
     public ResponseEntity<FileSummaryResponse> uploadFile(
@@ -54,26 +61,38 @@ public class FileController {
         return ResponseEntity.ok(response);
     }
 
-//    @GetMapping("/summary")
-//    public ResponseEntity<Page<FileRecord>> getSummary(
-//            @RequestParam String country,
-//            @RequestParam String accountType,
-//            @RequestParam String startDate,
-//            @RequestParam String endDate,
-//            @RequestParam int page,
-//            @RequestParam int size
-//    ) {
-//        return ResponseEntity.ok(
-//                fileUploadService.getSummary(
-//                        country,
-//                        accountType,
-//                        LocalDate.parse(startDate),
-//                        LocalDate.parse(endDate),
-//                        page,
-//                        size
-//                )
-//        );
-//    }
+    @GetMapping("/download/{fileId}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
+
+        FileRecord file = fileUploadRepository.findById(fileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found with ID: " + fileId));
+
+        Path filePath = Paths.get(file.getFilePath());
+        log.info("Trying to read file at: {}", filePath);
+
+        try {
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File is unreadable or missing at path: " + filePath);
+            }
+
+            String contentType = "application/octet-stream";
+            try {
+                contentType = Files.probeContentType(filePath);
+            } catch (IOException e) {
+                log.warn("Could not determine file type. Using default.");
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFileName() + "\"")
+                    .body(resource);
+
+        } catch (MalformedURLException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file path format", e);
+        }
+    }
+
 
 
     @GetMapping("/{id}")

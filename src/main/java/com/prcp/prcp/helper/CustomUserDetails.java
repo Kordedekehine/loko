@@ -9,33 +9,63 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-public class CustomUserDetails extends User implements UserDetails {
+public class CustomUserDetails implements UserDetails {
 
-    private final String username;
-    private final String password;
-    Collection<? extends GrantedAuthority> authorities;
+//    private final String username;
+//    private final String password;
+//    Collection<? extends GrantedAuthority> authorities;
+//
+//    public CustomUserDetails(User user) {
+//        this.username = user.getUsername();
+//        this.password = user.getPassword();
+//
+//        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRoles().name().toUpperCase()));
+//    }
+
+    private final User user;
 
     public CustomUserDetails(User user) {
-        this.username = user.getUsername();
-        this.password = user.getPassword();
-
-        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRoles().name().toUpperCase()));
+        this.user = user;
     }
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
+        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRoles().name()));
     }
+
+    public Long getId() {
+        return user.getId();
+    }
+
+    public String getCountryCode() {
+        return user.getCountryCode();
+    }
+
+    public String getState() {
+        return user.getState();
+    }
+
+    public String getFirstName() {
+        return user.getFirstName();
+    }
+
+    public String getLastName() {
+        return user.getLastName();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
+    }
+
 
     @Override
     public String getPassword() {
-        return password;
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return username;
+        return user.getUsername();
     }
 
     @Override
